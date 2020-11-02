@@ -172,7 +172,7 @@ describe('Snowplow Micro integration', () => {
       ).toBe(true)
     })
 
-    it(`${method}: contains an unstructured event with true timestamp`, () => {
+    it(`${method}: contains an self describing event with true timestamp`, () => {
       expect(
         logContains({
           event: {
@@ -253,7 +253,7 @@ describe('Snowplow Micro integration', () => {
       const pageViews = F.filter(
         ev =>
           F.get('event.event', ev) === 'page_view' &&
-          F.get('event.name_tracker', ev) === 'cf',
+          F.get('event.name_tracker', ev) === 'sp',
         log
       )
 
@@ -323,7 +323,7 @@ describe('Snowplow Micro integration', () => {
       ).toBe(true)
     })
 
-    it(`${method}: contains an unstructured event with global context from accept ruleset`, () => {
+    it(`${method}: contains an self describing event with global context from accept ruleset`, () => {
       expect(
         logContains({
           event: {
@@ -345,7 +345,7 @@ describe('Snowplow Micro integration', () => {
       ).toBe(true)
     })
 
-    it(`${method}: contains an unstructured event missing global context from reject ruleset`, () => {
+    it(`${method}: contains an self describing event missing global context from reject ruleset`, () => {
       expect(
         logContains({
           event: {
