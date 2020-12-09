@@ -15,9 +15,9 @@ const report = [
     filesize({showMinifiedSize: false, showBeforeSizes: 'build'})
 ]
 
-export const buildSp = async function () {
+export const iife = async function () {
     const snowplow = await rollup({
-        input: 'src/js/init.js',
+        input: 'src/js/iife.js',
         plugins: [...basePlugins, ...minify, spBannerPlugin, ...report],
     });
 

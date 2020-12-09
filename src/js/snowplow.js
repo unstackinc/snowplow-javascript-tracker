@@ -1,5 +1,5 @@
 /*
- * JavaScript tracker for Snowplow: snowplow.js
+ * JavaScript tracker for Snowplow: init.js
  *
  * Significant portions copyright 2010 Anthon Pang. Remainder copyright
  * 2012-2020 Snowplow Analytics Ltd. All rights reserved.
@@ -32,145 +32,35 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import forEach from 'lodash/forEach';
-import { addEventListener } from './lib/helpers';
-import { InQueueManager } from './in_queue';
-import { Tracker } from './tracker';
-import { version as jsVersion } from '../../package.json'
+// Snowplow Asynchronous Queue
 
-export function Snowplow(asynchronousQueue, functionName) {
-  var documentAlias = document,
-    windowAlias = window,
-    /* Tracker identifier with version */
-    version = 'js-' + jsVersion,
-    /* Contains four variables that are shared with tracker.js and must be passed by reference */
-    mutSnowplowState = {
-      /* List of request queues - one per Tracker instance */
-      outQueues: [],
-      bufferFlushers: [],
+/*
+ * Get the name of the global input function
+ */
 
-      /* Time at which to stop blocking excecution */
-      expireDateTime: null,
+import { Tracker } from './tracker'
+import { State } from './state';
+import { version } from './version';
 
-      /* DOM Ready */
-      hasLoaded: false,
-      registeredOnLoadHandlers: [],
+export const Snowplow = (() => {
+    const trackerDictionary = [];
+    const state = new State();
 
-      /* pageViewId, which can changed by other trackers on page;
-       * initialized by tracker sent first event */
-      pageViewId: null,
-    };
+    return {
+        newTracker: (namespace, endpoint, argmap) => {
+            argmap = argmap || {};
 
-  /************************************************************
-   * Private methods
-   ************************************************************/
+            trackerDictionary[namespace] = new Tracker('snowplow', namespace, version, state, argmap);
+            trackerDictionary[namespace].setCollectorUrl(endpoint);
+            return trackerDictionary[namespace];
+        },
 
-  /*
-   * Handle beforeunload event
-   *
-   * Subject to Safari's "Runaway JavaScript Timer" and
-   * Chrome V8 extension that terminates JS that exhibits
-   * "slow unload", i.e., calling getTime() > 1000 times
-   */
-  function beforeUnloadHandler() {
-    var now;
+        getTracker: (namespace) => {
+            return trackerDictionary[namespace];
+        },
 
-    // Flush all POST queues
-    forEach(mutSnowplowState.bufferFlushers, function (flusher) {
-      flusher();
-    });
-
-    /*
-     * Delay/pause (blocks UI)
-     */
-    if (mutSnowplowState.expireDateTime) {
-      // the things we do for backwards compatibility...
-      // in ECMA-262 5th ed., we could simply use:
-      //     while (Date.now() < mutSnowplowState.expireDateTime) { }
-      do {
-        now = new Date();
-        if (
-          Array.prototype.filter.call(mutSnowplowState.outQueues, function (queue) {
-            return queue.length > 0;
-          }).length === 0
-        ) {
-          break;
+        allTrackers: () => {
+            return trackerDictionary;
         }
-      } while (now.getTime() < mutSnowplowState.expireDateTime);
     }
-  }
-
-  /*
-   * Handler for onload event
-   */
-  function loadHandler() {
-    var i;
-
-    if (!mutSnowplowState.hasLoaded) {
-      mutSnowplowState.hasLoaded = true;
-      for (i = 0; i < mutSnowplowState.registeredOnLoadHandlers.length; i++) {
-        mutSnowplowState.registeredOnLoadHandlers[i]();
-      }
-    }
-    return true;
-  }
-
-  /*
-   * Add onload or DOM ready handler
-   */
-  function addReadyListener() {
-    var _timer;
-
-    if (documentAlias.addEventListener) {
-      addEventListener(documentAlias, 'DOMContentLoaded', function ready() {
-        documentAlias.removeEventListener('DOMContentLoaded', ready, false);
-        loadHandler();
-      });
-    } else if (documentAlias.attachEvent) {
-      documentAlias.attachEvent('onreadystatechange', function ready() {
-        if (documentAlias.readyState === 'complete') {
-          documentAlias.detachEvent('onreadystatechange', ready);
-          loadHandler();
-        }
-      });
-
-      if (documentAlias.documentElement.doScroll && windowAlias === windowAlias.top) {
-        (function ready() {
-          if (!mutSnowplowState.hasLoaded) {
-            try {
-              documentAlias.documentElement.doScroll('left');
-            } catch (error) {
-              setTimeout(ready, 0);
-              return;
-            }
-            loadHandler();
-          }
-        })();
-      }
-    }
-
-    // sniff for older WebKit versions
-    if (new RegExp('WebKit').test(navigator.userAgent)) {
-      _timer = setInterval(function () {
-        if (mutSnowplowState.hasLoaded || /loaded|complete/.test(documentAlias.readyState)) {
-          clearInterval(_timer);
-          loadHandler();
-        }
-      }, 10);
-    }
-
-    // fallback
-    addEventListener(windowAlias, 'load', loadHandler, false);
-  }
-
-  /************************************************************
-   * Constructor
-   ************************************************************/
-
-  // initialize the Snowplow singleton
-  addEventListener(windowAlias, 'beforeunload', beforeUnloadHandler, false);
-  addReadyListener();
-
-  // Now replace initialization array with queue manager object
-  return new InQueueManager(Tracker, version, mutSnowplowState, asynchronousQueue, functionName);
-}
+})();
