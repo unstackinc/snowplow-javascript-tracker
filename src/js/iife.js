@@ -41,6 +41,7 @@
 import { State } from './state';
 import { InQueueManager } from './in_queue';
 import { version } from './version';
+import { Tracker } from './tracker';
 
 var queueName,
   queue;
@@ -52,4 +53,4 @@ queueName = windowAlias.GlobalSnowplowNamespace.shift();
 queue = windowAlias[queueName];
 
 // Now replace initialization array with queue manager object
-queue.q = new InQueueManager(version, state, queue.q, queueName);
+queue.q = new InQueueManager(Tracker, version, state, queue.q, queueName);

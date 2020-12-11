@@ -34,7 +34,6 @@
 
 import map from 'lodash/map';
 import { warn, isFunction } from './lib/helpers';
-import { Tracker } from './tracker';
 
 /************************************************************
  * Proxy object
@@ -42,7 +41,7 @@ import { Tracker } from './tracker';
  *   after the Tracker has been initialized and loaded
  ************************************************************/
 
-export function InQueueManager(version, mutSnowplowState, asyncQueue, functionName) {
+export function InQueueManager(TrackerConstructor, version, mutSnowplowState, asyncQueue, functionName) {
   // Page view ID should be shared between all tracker instances
   var trackerDictionary = {};
 
@@ -83,7 +82,7 @@ export function InQueueManager(version, mutSnowplowState, asyncQueue, functionNa
     argmap = argmap || {};
 
     if (!trackerDictionary.hasOwnProperty(namespace)) {
-      trackerDictionary[namespace] = new Tracker(functionName, namespace, version, mutSnowplowState, argmap);
+      trackerDictionary[namespace] = new TrackerConstructor(functionName, namespace, version, mutSnowplowState, argmap);
       trackerDictionary[namespace].setCollectorUrl(endpoint);
     } else {
       warn('Tracker namespace ' + namespace + ' already exists.');

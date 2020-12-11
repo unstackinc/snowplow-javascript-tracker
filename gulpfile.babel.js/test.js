@@ -28,7 +28,7 @@ export const buildTestHelpers = async function () {
   
 export const buildTestSnowplow = async function () {
     const snowplow = await rollup({
-        input: 'src/js/init.js',
+        input: 'src/js/iife.js',
         plugins: basePlugins,
     });
     
